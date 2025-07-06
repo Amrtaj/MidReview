@@ -84,25 +84,37 @@
     <div class="container p-8 rounded-xl shadow-lg">
         <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Excel File Processor</h1>
 
+        <div class="mb-4">
+            <label for="excelFile1" class="block text-gray-700 text-sm font-medium mb-2">Upload Excel File 1:</label>
+            <input type="file" id="excelFile1" accept=".xls,.xlsx" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100">
+        </div>
+
         <div class="mb-6">
-            <label for="excelFile" class="block text-gray-700 text-sm font-medium mb-2">Upload Excel File:</label>
-            <input type="file" id="excelFile" accept=".xls,.xlsx" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100">
+            <label for="excelFile2" class="block text-gray-700 text-sm font-medium mb-2">Upload Excel File 2 (Optional):</label>
+            <input type="file" id="excelFile2" accept=".xls,.xlsx" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100">
+        </div>
+
+        <div class="flex justify-center space-x-4 mb-6">
+            <button id="processButton" class="btn btn-primary flex items-center justify-center" disabled>
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Process Files
+            </button>
         </div>
 
         <div class="flex justify-center space-x-4">
-            <button id="processButton" class="btn btn-primary flex items-center justify-center" disabled>
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                Process File
-            </button>
-            <button id="exportButton" class="btn btn-secondary flex items-center justify-center" disabled>
+            <button id="exportButton1" class="btn btn-secondary flex items-center justify-center" disabled>
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                Export Cleaned File
+                Export Cleaned File 1
+            </button>
+            <button id="exportButton2" class="btn btn-secondary flex items-center justify-center" disabled>
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                Export Cleaned File 2
             </button>
         </div>
 
         <div id="loadingIndicator" class="hidden mt-6 text-center text-gray-600">
             <div class="animate-spin inline-block w-8 h-8 border-4 border-t-4 border-blue-500 border-solid rounded-full"></div>
-            <p class="mt-2">Processing your file...</p>
+            <p class="mt-2">Processing your file(s)...</p>
         </div>
 
         <!-- Message Box for alerts -->
@@ -117,16 +129,19 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
 
     <script>
-        const excelFile = document.getElementById('excelFile');
+        const excelFile1 = document.getElementById('excelFile1');
+        const excelFile2 = document.getElementById('excelFile2');
         const processButton = document.getElementById('processButton');
-        const exportButton = document.getElementById('exportButton');
+        const exportButton1 = document.getElementById('exportButton1');
+        const exportButton2 = document.getElementById('exportButton2');
         const loadingIndicator = document.getElementById('loadingIndicator');
         const messageBox = document.getElementById('messageBox');
         const messageText = document.getElementById('messageText');
         const messageBoxClose = document.getElementById('messageBoxClose');
         const overlay = document.getElementById('overlay');
 
-        let processedData = null; // To store the processed data
+        let processedData1 = null; // To store the processed data for file 1
+        let processedData2 = null; // To store the processed data for file 2
 
         // Function to show a custom message box instead of alert()
         function showMessageBox(message) {
@@ -144,28 +159,43 @@
         messageBoxClose.addEventListener('click', hideMessageBox);
 
         // Enable/disable process button based on file selection
-        excelFile.addEventListener('change', () => {
-            if (excelFile.files.length > 0) {
+        excelFile1.addEventListener('change', () => {
+            if (excelFile1.files.length > 0 || excelFile2.files.length > 0) {
                 processButton.disabled = false;
-                exportButton.disabled = true; // Disable export until processed
-                processedData = null; // Clear previous processed data
             } else {
                 processButton.disabled = true;
-                exportButton.disabled = true;
             }
+            exportButton1.disabled = true; // Disable export until processed
+            exportButton2.disabled = true; // Disable export until processed
+            processedData1 = null; // Clear previous processed data
+            processedData2 = null; // Clear previous processed data
         });
 
-        processButton.addEventListener('click', async () => {
-            const file = excelFile.files[0];
-            if (!file) {
-                showMessageBox('Please select an Excel file first.');
-                return;
+        excelFile2.addEventListener('change', () => {
+            if (excelFile1.files.length > 0 || excelFile2.files.length > 0) {
+                processButton.disabled = false;
+            } else {
+                processButton.disabled = true;
             }
+            exportButton1.disabled = true; // Disable export until processed
+            exportButton2.disabled = true; // Disable export until processed
+            processedData1 = null; // Clear previous processed data
+            processedData2 = null; // Clear previous processed data
+        });
 
-            loadingIndicator.classList.remove('hidden');
-            processButton.disabled = true;
-            exportButton.disabled = true;
+        // Helper function to read file as binary string
+        function readFileAsync(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = (e) => reject(e);
+                reader.readAsBinaryString(file);
+            });
+        }
 
+        // Function to encapsulate the core file processing logic
+        async function processSingleFile(file, fileNumber) {
+            let resultData = null;
             try {
                 const data = await readFileAsync(file);
                 const workbook = XLSX.read(data, { type: 'binary' });
@@ -179,22 +209,17 @@
                 if (rows.length > 0) {
                     rows.shift();
                 } else {
-                    showMessageBox('The Excel file appears to be empty.');
-                    loadingIndicator.classList.add('hidden');
-                    processButton.disabled = false;
-                    return;
+                    showMessageBox(`File ${fileNumber} appears to be empty.`);
+                    return null;
                 }
 
-                // Step 2: Process data for every two rows (merge and move 'target')
                 // The header row is now at index 0
                 const headerRow = rows[0];
                 const targetColumnIndex = headerRow.findIndex(header => typeof header === 'string' && header.toLowerCase() === 'target');
 
                 if (targetColumnIndex === -1) {
-                    showMessageBox('Could not find a "target" column in the header. Please ensure your header row contains "target".');
-                    loadingIndicator.classList.add('hidden');
-                    processButton.disabled = false;
-                    return;
+                    showMessageBox(`Could not find a "target" column in File ${fileNumber} header. Please ensure your header row contains "target".`);
+                    return null;
                 }
 
                 const processedRows = [headerRow]; // Start with the header row
@@ -215,52 +240,170 @@
 
                 // Step 3: Remove any empty rows
                 // An empty row is considered a row with no defined cells or all cells are empty strings/null
-                processedData = processedRows.filter(row =>
+                resultData = processedRows.filter(row =>
                     row && row.some(cell => cell !== undefined && cell !== null && String(cell).trim() !== '')
                 );
 
-                showMessageBox('File processed successfully! You can now export the cleaned file.');
-                exportButton.disabled = false;
+                return resultData;
 
             } catch (error) {
-                console.error('Error processing file:', error);
-                showMessageBox('An error occurred during file processing. Please check the file format and try again. Error: ' + error.message);
-            } finally {
-                loadingIndicator.classList.add('hidden');
-                processButton.disabled = false;
+                console.error(`Error processing File ${fileNumber}:`, error);
+                showMessageBox(`An error occurred during File ${fileNumber} processing. Please check the file format and try again. Error: ` + error.message);
+                return null;
             }
-        });
+        }
 
-        exportButton.addEventListener('click', () => {
-            if (!processedData) {
-                showMessageBox('No data to export. Please process a file first.');
+        // Function to compare GOAL NAMEs and add a new column to File 2
+        function compareAndAddGoalNameUpdate(data1, data2) {
+            if (!data1 || !data2 || data1.length === 0 || data2.length === 0) {
+                console.warn("Cannot compare files: one or both datasets are empty.");
+                return data2; // Return data2 as is if comparison is not possible
+            }
+
+            const header1 = data1[0];
+            const header2 = data2[0];
+
+            const goalNameIndex1 = header1.findIndex(header => typeof header === 'string' && header.toLowerCase() === 'goal name');
+            const goalNameIndex2 = header2.findIndex(header => typeof header === 'string' && header.toLowerCase() === 'goal name');
+
+            if (goalNameIndex1 === -1) {
+                showMessageBox('Warning: "GOAL NAME" column not found in File 1. Cannot perform comparison.');
+                return data2;
+            }
+            if (goalNameIndex2 === -1) {
+                showMessageBox('Warning: "GOAL NAME" column not found in File 2. Cannot perform comparison.');
+                return data2;
+            }
+
+            // Find the insertion point for the new column in File 2's header
+            const insertIndex = goalNameIndex2 + 1;
+            header2.splice(insertIndex, 0, 'GOAL NAME UPDATE');
+
+            // Iterate through data rows of File 2 (starting from index 1 for data)
+            for (let i = 1; i < data2.length; i++) {
+                const row2 = data2[i];
+                const goalName2 = row2[goalNameIndex2];
+
+                let comparisonResult = '';
+
+                // Try to find a corresponding row in File 1 based on index
+                // This assumes a 1:1 correspondence by row order after initial processing
+                if (i < data1.length) {
+                    const row1 = data1[i];
+                    const goalName1 = row1[goalNameIndex1];
+
+                    if (String(goalName1).trim().toLowerCase() === String(goalName2).trim().toLowerCase()) {
+                        comparisonResult = 'Same';
+                    } else {
+                        comparisonResult = `File 1: "${goalName1 || ''}", File 2: "${goalName2 || ''}"`;
+                    }
+                } else {
+                    comparisonResult = 'No corresponding entry in File 1';
+                }
+
+                // Insert the comparison result into the current row of File 2
+                row2.splice(insertIndex, 0, comparisonResult);
+            }
+            return data2;
+        }
+
+
+        processButton.addEventListener('click', async () => {
+            const file1 = excelFile1.files[0];
+            const file2 = excelFile2.files[0];
+
+            if (!file1 && !file2) {
+                showMessageBox('Please select at least one Excel file to process.');
                 return;
             }
 
+            loadingIndicator.classList.remove('hidden');
+            processButton.disabled = true;
+            exportButton1.disabled = true;
+            exportButton2.disabled = true;
+
+            processedData1 = null;
+            processedData2 = null;
+
+            let successCount = 0;
+            let totalFilesToProcess = 0;
+
+            if (file1) {
+                totalFilesToProcess++;
+                const data = await processSingleFile(file1, 1);
+                if (data) {
+                    processedData1 = data;
+                    exportButton1.disabled = false;
+                    successCount++;
+                }
+            }
+
+            if (file2) {
+                totalFilesToProcess++;
+                const data = await processSingleFile(file2, 2);
+                if (data) {
+                    processedData2 = data;
+                    exportButton2.disabled = false;
+                    successCount++;
+                }
+            }
+
+            // Perform comparison and update File 2 data if both files were processed
+            if (processedData1 && processedData2) {
+                processedData2 = compareAndAddGoalNameUpdate(processedData1, processedData2);
+            } else if (file1 && !processedData1) {
+                showMessageBox('File 1 could not be processed. Comparison skipped.');
+            } else if (file2 && !processedData2) {
+                showMessageBox('File 2 could not be processed. Comparison skipped.');
+            } else if (!file1 && file2 && processedData2) {
+                showMessageBox('File 1 was not provided, comparison skipped for File 2.');
+            }
+
+
+            loadingIndicator.classList.add('hidden');
+            processButton.disabled = false;
+
+            if (successCount === totalFilesToProcess && totalFilesToProcess > 0) {
+                showMessageBox('All selected files processed successfully!');
+            } else if (successCount > 0) {
+                showMessageBox('Some files processed successfully. Check individual messages for details.');
+            } else {
+                showMessageBox('No files were processed successfully. Please check for errors.');
+            }
+        });
+
+        // Function to encapsulate export logic
+        function exportToFile(data, filename) {
             try {
                 // Create a new workbook
-                const ws = XLSX.utils.aoa_to_sheet(processedData);
+                const ws = XLSX.utils.aoa_to_sheet(data);
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "Cleaned Data");
 
                 // Export the workbook
-                XLSX.writeFile(wb, "cleaned_excel_file.xlsx");
-                showMessageBox('Cleaned file exported successfully!');
+                XLSX.writeFile(wb, filename);
+                showMessageBox(`${filename} exported successfully!`);
             } catch (error) {
-                console.error('Error exporting file:', error);
-                showMessageBox('An error occurred during file export. Error: ' + error.message);
+                console.error(`Error exporting ${filename}:`, error);
+                showMessageBox(`An error occurred during export of ${filename}. Error: ` + error.message);
             }
+        }
+
+        exportButton1.addEventListener('click', () => {
+            if (!processedData1) {
+                showMessageBox('No data to export for File 1. Please process File 1 first.');
+                return;
+            }
+            exportToFile(processedData1, "cleaned_excel_file_1.xlsx");
         });
 
-        // Helper function to read file as binary string
-        function readFileAsync(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => resolve(e.target.result);
-                reader.onerror = (e) => reject(e);
-                reader.readAsBinaryString(file);
-            });
-        }
+        exportButton2.addEventListener('click', () => {
+            if (!processedData2) {
+                showMessageBox('No data to export for File 2. Please process File 2 first.');
+                return;
+            }
+            exportToFile(processedData2, "cleaned_excel_file_2.xlsx");
+        });
     </script>
 </body>
 </html>
