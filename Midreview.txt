@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel File Processor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .feature-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .feature-box h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .feature-list {
+            list-style: none;
+        }
+
+        .feature-list li {
+            padding: 5px 0;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .feature-list li::before {
+            content: "✅";
+            font-size: 1.1em;
+        }
+
+        .upload-section {
+            background: #f8f9fa;
+            border: 2px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            border-color: #764ba2;
+            background: #f0f0f0;
+        }
+
+        .upload-section.drag-over {
+            border-color: #28a745;
+            background: #e8f5e8;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .upload-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .process-button {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-right: 15px;
+        }
+
+        .process-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .process-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .download-button {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .download-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .file-info {
+            background: #e8f5e8;
+            border: 1px solid #28a745;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .file-info.show {
+            display: block;
+        }
+
+        .file-info h3 {
+            color: #28a745;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .status.show {
+            display: block;
+        }
+
+        .status.success {
+            background: #e8f5e8;
+            border: 1px solid #28a745;
+            color: #28a745;
+        }
+
+        .status.error {
+            background: #ffe6e6;
+            border: 1px solid #dc3545;
+            color: #dc3545;
+        }
+
+        .status.processing {
+            background: #e6f3ff;
+            border: 1px solid #007bff;
+            color: #007bff;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .tips {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        .tips h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .tips ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .tips li {
+            padding: 5px 0;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tips li::before {
+            content: "💡";
+            font-size: 1.1em;
+        }
+
+        @media (max-width: 768px) {
+            .features {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Excel File Processor</h1>
+            <p>Upload an Excel file (.xlsx) to automatically process it with data cleaning operations</p>
+        </div>
+        
+        <div class="content">
+            <div class="features">
+                <div class="feature-box">
+                    <h3>Processing Operations</h3>
+                    <ul class="feature-list">
+                        <li>Delete first row</li>
+                        <li>Unmerge all merged cells</li>
+                        <li>Align Target column values</li>
+                        <li>Remove completely blank rows</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-box">
+                    <h3>Supported Format</h3>
+                    <ul class="feature-list">
+                        <li>Excel files (.xlsx)</li>
+                        <li>Multiple sheets supported</li>
+                        <li>Preserves formatting</li>
+                        <li>Client-side processing</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="upload-section" id="uploadSection">
+                <h3>📁 Choose your Excel file</h3>
+                <p>Drag and drop your file here or click to browse</p>
+                <br>
+                <button class="upload-button" onclick="document.getElementById('fileInput').click()">
+                    📂 Browse Files
+                </button>
+                <input type="file" id="fileInput" class="file-input" accept=".xlsx" />
+            </div>
+            
+            <div class="file-info" id="fileInfo">
+                <h3>📄 File Information</h3>
+                <p id="fileName"></p>
+                <p id="fileSize"></p>
+            </div>
+            
+            <div class="status" id="status"></div>
+            
+            <div style="text-align: center; margin-bottom: 20px;">
+                <button class="process-button" id="processButton" onclick="processFile()" disabled>
+                    🔄 Process File
+                </button>
+                <button class="download-button" id="downloadButton" onclick="downloadFile()" style="display: none;">
+                    📥 Download Processed File
+                </button>
+            </div>
+            
+            <div class="tips">
+                <h3>💡 Tips & Information</h3>
+                <ul>
+                    <li>Make sure your Excel file is in .xlsx format</li>
+                    <li>The app will process all sheets in your workbook</li>
+                    <li>Target columns are identified by the header name "Target"</li>
+                    <li>All processing happens in your browser - no data is sent to servers</li>
+                    <li>Large files may take a few moments to process</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let uploadedFile = null;
+        let processedWorkbook = null;
+        let originalFileName = '';
+
+        // File input handling
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        });
+
+        // Drag and drop handling
+        const uploadSection = document.getElementById('uploadSection');
+        
+        uploadSection.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            uploadSection.classList.add('drag-over');
+        });
+
+        uploadSection.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            uploadSection.classList.remove('drag-over');
+        });
+
+        uploadSection.addEventListener('drop', function(e) {
+            e.preventDefault();
+            uploadSection.classList.remove('drag-over');
+            const file = e.dataTransfer.files[0];
+            if (file && file.name.toLowerCase().endsWith('.xlsx')) {
+                handleFile(file);
+            } else {
+                showStatus('Please upload a valid .xlsx file', 'error');
+            }
+        });
+
+        function handleFile(file) {
+            uploadedFile = file;
+            originalFileName = file.name;
+            
+            // Show file info
+            document.getElementById('fileName').textContent = `File: ${file.name}`;
+            document.getElementById('fileSize').textContent = `Size: ${formatFileSize(file.size)}`;
+            document.getElementById('fileInfo').classList.add('show');
+            
+            // Enable process button
+            document.getElementById('processButton').disabled = false;
+            
+            showStatus(`✅ File uploaded successfully: ${file.name}`, 'success');
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status show ${type}`;
+            
+            if (type === 'processing') {
+                statusDiv.innerHTML = `<span class="loading"></span> ${message}`;
+            }
+        }
+
+        function processFile() {
+            if (!uploadedFile) {
+                showStatus('Please select a file first', 'error');
+                return;
+            }
+
+            showStatus('Processing your Excel file...', 'processing');
+            document.getElementById('processButton').disabled = true;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    
+                    // Process each sheet
+                    const processedSheets = {};
+                    
+                    workbook.SheetNames.forEach(sheetName => {
+                        const worksheet = workbook.Sheets[sheetName];
+                        let jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: ''});
+                        
+                        // Step 1: Delete first row
+                        if (jsonData.length > 0) {
+                            jsonData = jsonData.slice(1);
+                        }
+                        
+                        // Step 2: Handle Target column alignment and remove blank rows
+                        if (jsonData.length > 0) {
+                            // Find Target column indices
+                            const targetColumns = [];
+                            const headerRow = jsonData[0] || [];
+                            
+                            headerRow.forEach((header, index) => {
+                                if (header && header.toString().toLowerCase().trim() === 'target') {
+                                    targetColumns.push(index);
+                                }
+                            });
+                            
+                            // Process Target columns - fill down empty cells
+                            targetColumns.forEach(colIndex => {
+                                let lastValue = null;
+                                for (let rowIndex = 0; rowIndex < jsonData.length; rowIndex++) {
+                                    const row = jsonData[rowIndex];
+                                    if (row[colIndex] !== undefined && row[colIndex] !== null && row[colIndex] !== '') {
+                                        lastValue = row[colIndex];
+                                    } else if (lastValue !== null) {
+                                        if (!row[colIndex] || row[colIndex] === '') {
+                                            row[colIndex] = lastValue;
+                                        }
+                                    }
+                                }
+                            });
+                            
+                            // Step 3: Remove completely blank rows
+                            jsonData = jsonData.filter(row => {
+                                return row.some(cell => cell !== null && cell !== undefined && cell !== '');
+                            });
+                        }
+                        
+                        // Convert back to worksheet
+                        const newWorksheet = XLSX.utils.aoa_to_sheet(jsonData);
+                        processedSheets[sheetName] = newWorksheet;
+                    });
+                    
+                    // Create new workbook with processed sheets
+                    processedWorkbook = XLSX.utils.book_new();
+                    Object.keys(processedSheets).forEach(sheetName => {
+                        XLSX.utils.book_append_sheet(processedWorkbook, processedSheets[sheetName], sheetName);
+                    });
+                    
+                    showStatus('✅ File processed successfully!', 'success');
+                    document.getElementById('downloadButton').style.display = 'inline-flex';
+                    document.getElementById('processButton').disabled = false;
+                    
+                } catch (error) {
+                    showStatus(`❌ Error processing file: ${error.message}`, 'error');
+                    document.getElementById('processButton').disabled = false;
+                }
+            };
+            
+            reader.readAsArrayBuffer(uploadedFile);
+        }
+
+        function downloadFile() {
+            if (!processedWorkbook) {
+                showStatus('No processed file available', 'error');
+                return;
+            }
+
+            try {
+                // Generate filename with timestamp
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+                const nameWithoutExt = originalFileName.replace(/\.xlsx$/i, '');
+                const downloadFileName = `${nameWithoutExt}_processed_${timestamp}.xlsx`;
+                
+                // Write workbook to binary string
+                const wbout = XLSX.write(processedWorkbook, {bookType: 'xlsx', type: 'binary'});
+                
+                // Convert to blob
+                const blob = new Blob([s2ab(wbout)], {type: 'application/octet-stream'});
+                
+                // Create download link
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = downloadFileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                showStatus(`📥 Downloaded: ${downloadFileName}`, 'success');
+                
+            } catch (error) {
+                showStatus(`❌ Error downloading file: ${error.message}`, 'error');
+            }
+        }
+
+        // Helper function to convert string to array buffer
+        function s2ab(s) {
+            const buf = new ArrayBuffer(s.length);
+            const view = new Uint8Array(buf);
+            for (let i = 0; i < s.length; i++) {
+                view[i] = s.charCodeAt(i) & 0xFF;
+            }
+            return buf;
+        }
+    </script>
+</body>
+</html>
