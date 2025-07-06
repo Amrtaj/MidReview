@@ -4,557 +4,262 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Excel File Processor</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
         }
-
         .container {
             max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: #ffffff;
+            border-radius: 0.75rem; /* Rounded corners */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .btn-primary {
+            background-color: #4f46e5; /* Indigo-600 */
+            color: #ffffff;
+        }
+        .btn-primary:hover {
+            background-color: #4338ca; /* Indigo-700 */
+        }
+        .btn-secondary {
+            background-color: #e5e7eb; /* Gray-200 */
+            color: #374151; /* Gray-700 */
+        }
+        .btn-secondary:hover {
+            background-color: #d1d5db; /* Gray-300 */
+        }
+        input[type="file"] {
+            border: 2px dashed #d1d5db;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            background-color: #f9fafb;
+            cursor: pointer;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        input[type="file"]:hover {
+            border-color: #9ca3af;
+        }
+        .message-box {
+            background-color: #fff;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            min-width: 300px;
             text-align: center;
         }
-
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
         }
-
-        .header p {
-            font-size: 1.1em;
-            opacity: 0.9;
-        }
-
-        .content {
-            padding: 40px;
-        }
-
-        .features {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            margin-bottom: 40px;
-        }
-
-        .feature-box {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            border-left: 4px solid #667eea;
-        }
-
-        .feature-box h3 {
-            color: #333;
-            margin-bottom: 15px;
-            font-size: 1.2em;
-        }
-
-        .feature-list {
-            list-style: none;
-        }
-
-        .feature-list li {
-            padding: 5px 0;
-            color: #666;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .feature-list li::before {
-            content: "✅";
-            font-size: 1.1em;
-        }
-
-        .upload-section {
-            background: #f8f9fa;
-            border: 2px dashed #667eea;
-            border-radius: 15px;
-            padding: 40px;
-            text-align: center;
-            margin-bottom: 30px;
-            transition: all 0.3s ease;
-        }
-
-        .upload-section:hover {
-            border-color: #764ba2;
-            background: #f0f0f0;
-        }
-
-        .upload-section.drag-over {
-            border-color: #28a745;
-            background: #e8f5e8;
-        }
-
-        .file-input {
+        .hidden {
             display: none;
-        }
-
-        .upload-button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 25px;
-            font-size: 1.1em;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .upload-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .process-button {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 25px;
-            font-size: 1.1em;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            margin-right: 15px;
-        }
-
-        .process-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .process-button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .download-button {
-            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 25px;
-            font-size: 1.1em;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .download-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .file-info {
-            background: #e8f5e8;
-            border: 1px solid #28a745;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        .file-info.show {
-            display: block;
-        }
-
-        .file-info h3 {
-            color: #28a745;
-            margin-bottom: 10px;
-        }
-
-        .status {
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        .status.show {
-            display: block;
-        }
-
-        .status.success {
-            background: #e8f5e8;
-            border: 1px solid #28a745;
-            color: #28a745;
-        }
-
-        .status.error {
-            background: #ffe6e6;
-            border: 1px solid #dc3545;
-            color: #dc3545;
-        }
-
-        .status.processing {
-            background: #e6f3ff;
-            border: 1px solid #007bff;
-            color: #007bff;
-        }
-
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #007bff;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .tips {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
-            margin-top: 30px;
-        }
-
-        .tips h3 {
-            color: #333;
-            margin-bottom: 15px;
-        }
-
-        .tips ul {
-            list-style: none;
-            padding-left: 0;
-        }
-
-        .tips li {
-            padding: 5px 0;
-            color: #666;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .tips li::before {
-            content: "💡";
-            font-size: 1.1em;
-        }
-
-        @media (max-width: 768px) {
-            .features {
-                grid-template-columns: 1fr;
-            }
-            
-            .header h1 {
-                font-size: 2em;
-            }
-            
-            .content {
-                padding: 20px;
-            }
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>📊 Excel File Processor</h1>
-            <p>Upload an Excel file (.xlsx) to automatically process it with data cleaning operations</p>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="container p-8 rounded-xl shadow-lg">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Excel File Processor</h1>
+
+        <div class="mb-6">
+            <label for="excelFile" class="block text-gray-700 text-sm font-medium mb-2">Upload Excel File:</label>
+            <input type="file" id="excelFile" accept=".xls,.xlsx" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100">
         </div>
-        
-        <div class="content">
-            <div class="features">
-                <div class="feature-box">
-                    <h3>Processing Operations</h3>
-                    <ul class="feature-list">
-                        <li>Delete first row</li>
-                        <li>Unmerge all merged cells</li>
-                        <li>Align Target column values</li>
-                        <li>Remove completely blank rows</li>
-                    </ul>
-                </div>
-                
-                <div class="feature-box">
-                    <h3>Supported Format</h3>
-                    <ul class="feature-list">
-                        <li>Excel files (.xlsx)</li>
-                        <li>Multiple sheets supported</li>
-                        <li>Preserves formatting</li>
-                        <li>Client-side processing</li>
-                    </ul>
-                </div>
-            </div>
-            
-            <div class="upload-section" id="uploadSection">
-                <h3>📁 Choose your Excel file</h3>
-                <p>Drag and drop your file here or click to browse</p>
-                <br>
-                <button class="upload-button" onclick="document.getElementById('fileInput').click()">
-                    📂 Browse Files
-                </button>
-                <input type="file" id="fileInput" class="file-input" accept=".xlsx" />
-            </div>
-            
-            <div class="file-info" id="fileInfo">
-                <h3>📄 File Information</h3>
-                <p id="fileName"></p>
-                <p id="fileSize"></p>
-            </div>
-            
-            <div class="status" id="status"></div>
-            
-            <div style="text-align: center; margin-bottom: 20px;">
-                <button class="process-button" id="processButton" onclick="processFile()" disabled>
-                    🔄 Process File
-                </button>
-                <button class="download-button" id="downloadButton" onclick="downloadFile()" style="display: none;">
-                    📥 Download Processed File
-                </button>
-            </div>
-            
-            <div class="tips">
-                <h3>💡 Tips & Information</h3>
-                <ul>
-                    <li>Make sure your Excel file is in .xlsx format</li>
-                    <li>The app will process all sheets in your workbook</li>
-                    <li>Target columns are identified by the header name "Target"</li>
-                    <li>All processing happens in your browser - no data is sent to servers</li>
-                    <li>Large files may take a few moments to process</li>
-                </ul>
-            </div>
+
+        <div class="flex justify-center space-x-4">
+            <button id="processButton" class="btn btn-primary flex items-center justify-center" disabled>
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Process File
+            </button>
+            <button id="exportButton" class="btn btn-secondary flex items-center justify-center" disabled>
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                Export Cleaned File
+            </button>
         </div>
+
+        <div id="loadingIndicator" class="hidden mt-6 text-center text-gray-600">
+            <div class="animate-spin inline-block w-8 h-8 border-4 border-t-4 border-blue-500 border-solid rounded-full"></div>
+            <p class="mt-2">Processing your file...</p>
+        </div>
+
+        <!-- Message Box for alerts -->
+        <div id="messageBox" class="message-box hidden">
+            <p id="messageText" class="text-gray-800 mb-4"></p>
+            <button id="messageBoxClose" class="btn btn-primary">OK</button>
+        </div>
+        <div id="overlay" class="overlay hidden"></div>
     </div>
 
+    <!-- SheetJS CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+
     <script>
-        let uploadedFile = null;
-        let processedWorkbook = null;
-        let originalFileName = '';
+        const excelFile = document.getElementById('excelFile');
+        const processButton = document.getElementById('processButton');
+        const exportButton = document.getElementById('exportButton');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const messageBox = document.getElementById('messageBox');
+        const messageText = document.getElementById('messageText');
+        const messageBoxClose = document.getElementById('messageBoxClose');
+        const overlay = document.getElementById('overlay');
 
-        // File input handling
-        document.getElementById('fileInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                handleFile(file);
-            }
-        });
+        let processedData = null; // To store the processed data
 
-        // Drag and drop handling
-        const uploadSection = document.getElementById('uploadSection');
-        
-        uploadSection.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            uploadSection.classList.add('drag-over');
-        });
+        // Function to show a custom message box instead of alert()
+        function showMessageBox(message) {
+            messageText.textContent = message;
+            messageBox.classList.remove('hidden');
+            overlay.classList.remove('hidden');
+        }
 
-        uploadSection.addEventListener('dragleave', function(e) {
-            e.preventDefault();
-            uploadSection.classList.remove('drag-over');
-        });
+        // Function to hide the custom message box
+        function hideMessageBox() {
+            messageBox.classList.add('hidden');
+            overlay.classList.add('hidden');
+        }
 
-        uploadSection.addEventListener('drop', function(e) {
-            e.preventDefault();
-            uploadSection.classList.remove('drag-over');
-            const file = e.dataTransfer.files[0];
-            if (file && file.name.toLowerCase().endsWith('.xlsx')) {
-                handleFile(file);
+        messageBoxClose.addEventListener('click', hideMessageBox);
+
+        // Enable/disable process button based on file selection
+        excelFile.addEventListener('change', () => {
+            if (excelFile.files.length > 0) {
+                processButton.disabled = false;
+                exportButton.disabled = true; // Disable export until processed
+                processedData = null; // Clear previous processed data
             } else {
-                showStatus('Please upload a valid .xlsx file', 'error');
+                processButton.disabled = true;
+                exportButton.disabled = true;
             }
         });
 
-        function handleFile(file) {
-            uploadedFile = file;
-            originalFileName = file.name;
-            
-            // Show file info
-            document.getElementById('fileName').textContent = `File: ${file.name}`;
-            document.getElementById('fileSize').textContent = `Size: ${formatFileSize(file.size)}`;
-            document.getElementById('fileInfo').classList.add('show');
-            
-            // Enable process button
-            document.getElementById('processButton').disabled = false;
-            
-            showStatus(`✅ File uploaded successfully: ${file.name}`, 'success');
-        }
-
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
-
-        function showStatus(message, type) {
-            const statusDiv = document.getElementById('status');
-            statusDiv.textContent = message;
-            statusDiv.className = `status show ${type}`;
-            
-            if (type === 'processing') {
-                statusDiv.innerHTML = `<span class="loading"></span> ${message}`;
-            }
-        }
-
-        function processFile() {
-            if (!uploadedFile) {
-                showStatus('Please select a file first', 'error');
+        processButton.addEventListener('click', async () => {
+            const file = excelFile.files[0];
+            if (!file) {
+                showMessageBox('Please select an Excel file first.');
                 return;
             }
 
-            showStatus('Processing your Excel file...', 'processing');
-            document.getElementById('processButton').disabled = true;
+            loadingIndicator.classList.remove('hidden');
+            processButton.disabled = true;
+            exportButton.disabled = true;
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, {type: 'array'});
-                    
-                    // Process each sheet
-                    const processedSheets = {};
-                    
-                    workbook.SheetNames.forEach(sheetName => {
-                        const worksheet = workbook.Sheets[sheetName];
-                        let jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: ''});
-                        
-                        // Step 1: Delete first row
-                        if (jsonData.length > 0) {
-                            jsonData = jsonData.slice(1);
-                        }
-                        
-                        // Step 2: Handle Target column alignment and remove blank rows
-                        if (jsonData.length > 0) {
-                            // Find Target column indices
-                            const targetColumns = [];
-                            const headerRow = jsonData[0] || [];
-                            
-                            headerRow.forEach((header, index) => {
-                                if (header && header.toString().toLowerCase().trim() === 'target') {
-                                    targetColumns.push(index);
-                                }
-                            });
-                            
-                            // Process Target columns - fill down empty cells
-                            targetColumns.forEach(colIndex => {
-                                let lastValue = null;
-                                for (let rowIndex = 0; rowIndex < jsonData.length; rowIndex++) {
-                                    const row = jsonData[rowIndex];
-                                    if (row[colIndex] !== undefined && row[colIndex] !== null && row[colIndex] !== '') {
-                                        lastValue = row[colIndex];
-                                    } else if (lastValue !== null) {
-                                        if (!row[colIndex] || row[colIndex] === '') {
-                                            row[colIndex] = lastValue;
-                                        }
-                                    }
-                                }
-                            });
-                            
-                            // Step 3: Remove completely blank rows
-                            jsonData = jsonData.filter(row => {
-                                return row.some(cell => cell !== null && cell !== undefined && cell !== '');
-                            });
-                        }
-                        
-                        // Convert back to worksheet
-                        const newWorksheet = XLSX.utils.aoa_to_sheet(jsonData);
-                        processedSheets[sheetName] = newWorksheet;
-                    });
-                    
-                    // Create new workbook with processed sheets
-                    processedWorkbook = XLSX.utils.book_new();
-                    Object.keys(processedSheets).forEach(sheetName => {
-                        XLSX.utils.book_append_sheet(processedWorkbook, processedSheets[sheetName], sheetName);
-                    });
-                    
-                    showStatus('✅ File processed successfully!', 'success');
-                    document.getElementById('downloadButton').style.display = 'inline-flex';
-                    document.getElementById('processButton').disabled = false;
-                    
-                } catch (error) {
-                    showStatus(`❌ Error processing file: ${error.message}`, 'error');
-                    document.getElementById('processButton').disabled = false;
+            try {
+                const data = await readFileAsync(file);
+                const workbook = XLSX.read(data, { type: 'binary' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+
+                // Convert sheet to array of arrays (rows)
+                let rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                // Step 1: Remove the first row (sheet title)
+                if (rows.length > 0) {
+                    rows.shift();
+                } else {
+                    showMessageBox('The Excel file appears to be empty.');
+                    loadingIndicator.classList.add('hidden');
+                    processButton.disabled = false;
+                    return;
                 }
-            };
-            
-            reader.readAsArrayBuffer(uploadedFile);
-        }
 
-        function downloadFile() {
-            if (!processedWorkbook) {
-                showStatus('No processed file available', 'error');
+                // Step 2: Process data for every two rows (merge and move 'target')
+                // The header row is now at index 0
+                const headerRow = rows[0];
+                const targetColumnIndex = headerRow.findIndex(header => typeof header === 'string' && header.toLowerCase() === 'target');
+
+                if (targetColumnIndex === -1) {
+                    showMessageBox('Could not find a "target" column in the header. Please ensure your header row contains "target".');
+                    loadingIndicator.classList.add('hidden');
+                    processButton.disabled = false;
+                    return;
+                }
+
+                const processedRows = [headerRow]; // Start with the header row
+                for (let i = 1; i < rows.length; i += 2) {
+                    const row1 = rows[i];
+                    const row2 = rows[i + 1];
+
+                    if (row1) {
+                        let newRow = [...row1]; // Create a copy of the first row
+
+                        if (row2 && row2.length > targetColumnIndex) {
+                            // Move the 'target' value from row2 to the target column in newRow
+                            newRow[targetColumnIndex] = row2[targetColumnIndex];
+                        }
+                        processedRows.push(newRow);
+                    }
+                }
+
+                // Step 3: Remove any empty rows
+                // An empty row is considered a row with no defined cells or all cells are empty strings/null
+                processedData = processedRows.filter(row =>
+                    row && row.some(cell => cell !== undefined && cell !== null && String(cell).trim() !== '')
+                );
+
+                showMessageBox('File processed successfully! You can now export the cleaned file.');
+                exportButton.disabled = false;
+
+            } catch (error) {
+                console.error('Error processing file:', error);
+                showMessageBox('An error occurred during file processing. Please check the file format and try again. Error: ' + error.message);
+            } finally {
+                loadingIndicator.classList.add('hidden');
+                processButton.disabled = false;
+            }
+        });
+
+        exportButton.addEventListener('click', () => {
+            if (!processedData) {
+                showMessageBox('No data to export. Please process a file first.');
                 return;
             }
 
             try {
-                // Generate filename with timestamp
-                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-                const nameWithoutExt = originalFileName.replace(/\.xlsx$/i, '');
-                const downloadFileName = `${nameWithoutExt}_processed_${timestamp}.xlsx`;
-                
-                // Write workbook to binary string
-                const wbout = XLSX.write(processedWorkbook, {bookType: 'xlsx', type: 'binary'});
-                
-                // Convert to blob
-                const blob = new Blob([s2ab(wbout)], {type: 'application/octet-stream'});
-                
-                // Create download link
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = downloadFileName;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
-                
-                showStatus(`📥 Downloaded: ${downloadFileName}`, 'success');
-                
-            } catch (error) {
-                showStatus(`❌ Error downloading file: ${error.message}`, 'error');
-            }
-        }
+                // Create a new workbook
+                const ws = XLSX.utils.aoa_to_sheet(processedData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Cleaned Data");
 
-        // Helper function to convert string to array buffer
-        function s2ab(s) {
-            const buf = new ArrayBuffer(s.length);
-            const view = new Uint8Array(buf);
-            for (let i = 0; i < s.length; i++) {
-                view[i] = s.charCodeAt(i) & 0xFF;
+                // Export the workbook
+                XLSX.writeFile(wb, "cleaned_excel_file.xlsx");
+                showMessageBox('Cleaned file exported successfully!');
+            } catch (error) {
+                console.error('Error exporting file:', error);
+                showMessageBox('An error occurred during file export. Error: ' + error.message);
             }
-            return buf;
+        });
+
+        // Helper function to read file as binary string
+        function readFileAsync(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = (e) => reject(e);
+                reader.readAsBinaryString(file);
+            });
         }
     </script>
 </body>
